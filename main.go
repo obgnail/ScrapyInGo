@@ -1,0 +1,6 @@
+package ScrapyInGo
+
+
+func main() {
+
+}
