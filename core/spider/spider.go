@@ -1,7 +1,7 @@
 package spider
 
 import (
-	"github.com/obgnail/ScrapyInGo/entity"
+	"github.com/obgnail/ScrapyInGo/core/entity"
 )
 
 type Spider interface {

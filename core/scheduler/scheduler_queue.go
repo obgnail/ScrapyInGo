@@ -3,7 +3,7 @@ package scheduler
 import (
 	"container/list"
 	"crypto/md5"
-	"github.com/obgnail/ScrapyInGo/entity"
+	"github.com/obgnail/ScrapyInGo/core/entity"
 	"sync"
 )
 

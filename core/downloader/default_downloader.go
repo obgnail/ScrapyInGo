@@ -5,7 +5,7 @@ import (
 
 	"github.com/juju/errors"
 
-	"github.com/obgnail/ScrapyInGo/entity"
+	"github.com/obgnail/ScrapyInGo/core/entity"
 )
 
 type DefaultDownloader struct{}
@@ -19,8 +19,6 @@ func (d *DefaultDownloader) Download(req *entity.Request) (*entity.Response, err
 	if err != nil {
 		return nil, errors.Errorf("download failed, err:[%s]", err.Error())
 	}
-	defer respObj.Body.Close()
-
 	resp := entity.FromRequest(req)
 	resp.SetRespObj(respObj)
 	return resp, nil

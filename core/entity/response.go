@@ -8,6 +8,7 @@ import (
 
 type Response struct {
 	RaspObj  *http.Response
+	Request  *Request
 	Callback CallbackFunc
 	Errback  ErrbackFunc
 	Meta     map[string]interface{}
@@ -21,6 +22,7 @@ func NewResponse(
 ) *Response {
 	return &Response{
 		RaspObj:  response,
+		Request:  nil,
 		Callback: callback,
 		Errback:  errback,
 		Meta:     meta,
@@ -29,6 +31,7 @@ func NewResponse(
 
 func FromRequest(request *Request) *Response {
 	r := &Response{}
+	r.Request = request
 	r.Callback = request.Callback
 	r.Errback = request.Errback
 	r.Meta = request.Meta

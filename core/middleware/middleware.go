@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"github.com/obgnail/ScrapyInGo/entity"
-	"github.com/obgnail/ScrapyInGo/spider"
+	"github.com/obgnail/ScrapyInGo/core/entity"
+	"github.com/obgnail/ScrapyInGo/core/spider"
 )
 
 type Middleware interface {

@@ -5,7 +5,7 @@ import (
 )
 
 type CallbackFunc func(r *Response) (interface{}, error)
-type ErrbackFunc func(r *Response, err error)
+type ErrbackFunc func(r *Request, err error)
 
 type Request struct {
 	ReqObj     *http.Request
