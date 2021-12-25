@@ -13,6 +13,9 @@ func (m *DefaultMiddleware) ProcessRequest(req *entity.Request, sp spider.Spider
 func (m *DefaultMiddleware) ProcessResponse(resp *entity.Response, sp spider.Spider) *entity.Response {
 	return resp
 }
+func (m *DefaultMiddleware) ProcessItem(item interface{}, sp spider.Spider) interface{} {
+	return item
+}
 func (m *DefaultMiddleware) SpiderOpened(sp spider.Spider) {}
 
 func NewDefaultMiddleware() *DefaultMiddleware {

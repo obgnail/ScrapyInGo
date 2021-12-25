@@ -9,10 +9,11 @@ type ErrbackFunc func(r *Request, err error)
 
 type Request struct {
 	ReqObj     *http.Request
+	response   *Response
 	priority   uint
 	dontFilter bool
-	Callback   CallbackFunc
-	Errback    ErrbackFunc
+	Callback   CallbackFunc // 请求成功的时候回调此函数
+	Errback    ErrbackFunc  // 请求或解析失败的时候回调此函数
 	Meta       map[string]interface{}
 }
 
@@ -26,6 +27,7 @@ func NewRequest(
 ) *Request {
 	return &Request{
 		ReqObj:     reqObj,
+		response:   nil,
 		priority:   priority,
 		dontFilter: dontFilter,
 		Callback:   callback,
@@ -40,4 +42,16 @@ func (r *Request) GetReqObj() *http.Request {
 
 func (r *Request) GetUrl() string {
 	return r.ReqObj.URL.String()
+}
+
+func (r *Request) GetPriority() uint {
+	return r.priority
+}
+
+func (r *Request) GetResponse() *Response {
+	return r.response
+}
+
+func (r *Request) SetResponse(resp *Response) {
+	r.response = resp
 }

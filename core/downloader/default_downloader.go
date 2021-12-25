@@ -1,9 +1,8 @@
 package downloader
 
 import (
-	"net/http"
-
 	"github.com/juju/errors"
+	"net/http"
 
 	"github.com/obgnail/ScrapyInGo/core/entity"
 )
@@ -15,11 +14,9 @@ func NewDefaultDownloader() *DefaultDownloader {
 }
 func (d *DefaultDownloader) Download(req *entity.Request) (*entity.Response, error) {
 	client := &http.Client{}
-	respObj, err := client.Do(req.GetReqObj())
+	resp, err := entity.ProcessRequest(client, req)
 	if err != nil {
-		return nil, errors.Errorf("download failed, err:[%s]", err.Error())
+		return nil, errors.Trace(err)
 	}
-	resp := entity.FromRequest(req)
-	resp.SetRespObj(respObj)
 	return resp, nil
 }

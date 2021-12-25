@@ -20,8 +20,10 @@ func (p *StoreMangaPipeline) ProcessItem(item interface{}, sp spider.Spider) err
 	filePath := filepath.Join(dirPath, manga.fileName)
 	err := ioutil.WriteFile(filePath, manga.content, 0666)
 	if err != nil {
-		log.Printf("[ERROR] save manga:%s", filePath)
+		log.Printf("[ERROR] save successful url:%s\n", filePath)
+		return nil
 	}
+	log.Printf("[INFO] save manga successful url:%s\n", filePath)
 	return nil
 }
 

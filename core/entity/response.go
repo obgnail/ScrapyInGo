@@ -46,6 +46,10 @@ func (r *Response) SetRespObj(raspObj *http.Response) {
 	r.RaspObj = raspObj
 }
 
+func (r *Response) GetRequest() *Request {
+	return r.Request
+}
+
 func (r *Response) GetContent() ([]byte, error) {
 	resp, err := ioutil.ReadAll(r.GetRespObj().Body)
 	if err != nil {
