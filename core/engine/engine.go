@@ -72,7 +72,7 @@ func Default(sp spider.Spider) *Engine {
 	)
 }
 
-func (e *Engine) PushRequest(req *entity.Request) {
+func (e *Engine) QueueRequest(req *entity.Request) {
 	if e.scheduler == nil {
 		log.Fatal("spider has no scheduler")
 	}

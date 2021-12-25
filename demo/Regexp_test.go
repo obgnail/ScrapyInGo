@@ -15,6 +15,16 @@ func TestRegexp(t *testing.T) {
 	fmt.Println(favoritesPageMatch)
 }
 
+func TestConvter(t *testing.T) {
+	x := "[Kedama Gyuunyuu (Tamano Kedama)] Sutora-Chan [Chinese]"
+	myfunc(x)
+}
+
+func myfunc(item interface{}) {
+	manga := item.(Manga)
+	fmt.Println(manga)
+}
+
 
 
 

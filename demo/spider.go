@@ -3,6 +3,7 @@ package demo
 import (
 	"bytes"
 	"fmt"
+	"github.com/juju/errors"
 	"github.com/obgnail/ScrapyInGo/core/downloader"
 	"github.com/obgnail/ScrapyInGo/core/entity"
 	"github.com/obgnail/ScrapyInGo/core/middleware"
@@ -10,12 +11,10 @@ import (
 	"log"
 	"regexp"
 	"strconv"
+	"time"
 )
 
-const (
-	UA     = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36"
-	Cookie = "cf_clearance=daa9d77091a0e1b953eaeff3cf032ad0d014e6f4-1626532362-0-150; csrftoken=Zxvfpgcdhf1uDMzzlwvsB4gC7TICWi6TRZcCubCnfEnECwY8MzfVbXgg6Bzw2Ytf; sessionid=uzckbjtbrie0smci1z0z5y13de5nf59g"
-)
+
 
 var (
 	favoritesBookRegexp  = regexp.MustCompile(`<a href="/g/(\d+?)/" class="cover".*?>`)
@@ -44,15 +43,19 @@ func New(name string, threadNum uint, headers map[string]string, proxy string) *
 	return sp
 }
 
-func (s *NhentaiSpider) getFavoritesPageRequest() (*entity.Request, error) {
+func (s *NhentaiSpider) QueueStartUrl() {
 	url := "https://nhentai.net/favorites/"
-	return newSimpleRequest(url, s.Parse, s.ErrBack, nil)
+	req, err := newSimpleRequest(url, s.Parse, s.ErrBack, nil)
+	if err != nil {
+		log.Fatalln(errors.Trace(err))
+	}
+	s.QueueRequest(req)
 }
 
 func (s *NhentaiSpider) Parse(resp *entity.Response) (interface{}, error) {
 	content, err := getContentFromResponse(resp)
 	if err != nil {
-		return nil, err
+		return nil, errors.Trace(err)
 	}
 	mangaMatches := favoritesBookRegexp.FindAllSubmatch(content, -1)
 	for _, match := range mangaMatches {
@@ -64,12 +67,15 @@ func (s *NhentaiSpider) Parse(resp *entity.Response) (interface{}, error) {
 		url := fmt.Sprintf("https://nhentai.net/g/%s/", mangaID)
 		mangaIndexPageReq, e := newSimpleRequest(url, s.ParseMangaIndexPage, s.ErrBack, nil)
 		if e != nil {
-			return nil, e
+			return nil, errors.Trace(e)
 		}
-		s.PushRequest(mangaIndexPageReq)
+		s.QueueRequest(mangaIndexPageReq)
 	}
 
 	favoritesPageMatch := lastBookPageRegexp.FindSubmatch(content)
+	if favoritesPageMatch == nil {
+		return nil, nil
+	}
 	lastPage := string(favoritesPageMatch[1])
 	if lastPage == "" {
 		log.Printf("[WARN] get last page error,url:[%s]", resp.Request.GetUrl())
@@ -86,7 +92,7 @@ func (s *NhentaiSpider) Parse(resp *entity.Response) (interface{}, error) {
 		if e != nil {
 			return nil, e
 		}
-		s.PushRequest(favoritesPageReq)
+		s.QueueRequest(favoritesPageReq)
 	}
 	return nil, nil
 }
@@ -94,7 +100,7 @@ func (s *NhentaiSpider) Parse(resp *entity.Response) (interface{}, error) {
 func (s *NhentaiSpider) ParseMangaIndexPage(resp *entity.Response) (interface{}, error) {
 	content, err := getContentFromResponse(resp)
 	if err != nil {
-		return nil, err
+		return nil, errors.Trace(err)
 	}
 
 	pageNumMatch := mangaPageNumRegexp.FindSubmatch(content)
@@ -112,7 +118,7 @@ func (s *NhentaiSpider) ParseMangaIndexPage(resp *entity.Response) (interface{},
 	mangaNameMatch := mangaNameRegexp.FindSubmatch(content)
 	name := bytes.Join(mangaNameMatch[1:], []byte(""))
 	mangeDirName := ValidName(name)
-	meta := map[string]interface{}{"mangaDirName": mangeDirName, "mangaFileName": ""}
+	meta := map[string]interface{}{"mangaDirName": string(mangeDirName), "mangaFileName": ""}
 
 	// 1t.jpg
 	mangaUrlSuffixMatch := mangaUrlSuffixRegexp.FindSubmatch(content)
@@ -123,27 +129,40 @@ func (s *NhentaiSpider) ParseMangaIndexPage(resp *entity.Response) (interface{},
 	}
 
 	for i := 1; i <= pages; i++ {
-		url := fmt.Sprintf("https://i.nhentai.net/galleries/%s/%d.%s", mangaID, i, suffix)
-		meta["mangaFileName"] = fmt.Sprintf("%d", i)
+		fileName := fmt.Sprintf("%d.%s", i, suffix)
+		url := fmt.Sprintf("https://i.nhentai.net/galleries/%s/%s", mangaID, fileName)
+		meta["mangaFileName"] = fileName
 		mangaReq, e := newSimpleRequest(url, s.ParseMangaContent, s.ErrBack, meta)
 		if e != nil {
-			return nil, e
+			return nil, errors.Trace(e)
 		}
-		s.PushRequest(mangaReq)
+		s.QueueRequest(mangaReq)
 	}
 
 	return nil, nil
 }
 
+// ErrBack 请求错误、解析错误都会回调此函数
 func (s *NhentaiSpider) ErrBack(req *entity.Request, err error) {
-	fmt.Println("errback ->", err)
-	return
+	req.IncReTries()
+	url := req.GetReqObj().URL
+	log.Printf("[ERROR] error back, url: %s\n", url)
+	log.Println("[ERROR] Trace: ->", errors.Trace(err))
+
+	retries := req.GetReTries()
+	if retries > 5 {
+		log.Printf("reTry too much: -> %s\n", url)
+		return
+	}
+	time.Sleep(10 * time.Second)
+	log.Printf("requeue url: %s\n", url)
+	s.QueueRequest(req)
 }
 
 func (s *NhentaiSpider) ParseMangaContent(resp *entity.Response) (interface{}, error) {
 	content, err := getContentFromResponse(resp)
 	if err != nil {
-		return nil, err
+		return nil, errors.Trace(err)
 	}
 	manga := &Manga{
 		content:  content,
@@ -154,20 +173,6 @@ func (s *NhentaiSpider) ParseMangaContent(resp *entity.Response) (interface{}, e
 }
 
 func (s *NhentaiSpider) Run() {
-	req, err := s.getFavoritesPageRequest()
-	if err != nil {
-		log.Fatalln(err)
-	}
-	s.PushRequest(req)
+	s.QueueStartUrl()
 	s.Crawl()
-}
-
-func Run() {
-	spider := New(
-		"nhentai",
-		1,
-		map[string]string{"cookie": Cookie, "user-agent": UA},
-		"http://127.0.0.1:7890",
-	)
-	spider.Run()
 }

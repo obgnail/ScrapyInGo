@@ -8,13 +8,13 @@ import (
 )
 
 const (
-	BasePath = "download"
+	BasePath = "d:\\tmp\\download"
 )
 
 type StoreMangaPipeline struct{}
 
 func (p *StoreMangaPipeline) ProcessItem(item interface{}, sp spider.Spider) error {
-	manga := item.(Manga)
+	manga := item.(*Manga)
 	dirPath := filepath.Join(BasePath, manga.dirName)
 	MdirIfNotExist(dirPath)
 	filePath := filepath.Join(dirPath, manga.fileName)

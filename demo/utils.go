@@ -23,7 +23,7 @@ func newSimpleRequest(
 ) (*entity.Request, error) {
 	reqObj, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.Trace(err)
 	}
 	req := entity.NewRequest(reqObj, 100, false, callback, errBack, meta)
 	return req, nil
