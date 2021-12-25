@@ -24,7 +24,7 @@ func NewRequest(
 	dontFilter bool,
 	callback CallbackFunc,
 	errback ErrbackFunc,
-	Meta map[string]interface{},
+	meta map[string]interface{},
 ) *Request {
 	return &Request{
 		ReqObj:     reqObj,
@@ -34,7 +34,7 @@ func NewRequest(
 		dontFilter: dontFilter,
 		Callback:   callback,
 		Errback:    errback,
-		Meta:       Meta,
+		Meta:       meta,
 	}
 }
 

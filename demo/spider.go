@@ -14,8 +14,6 @@ import (
 	"time"
 )
 
-
-
 var (
 	favoritesBookRegexp  = regexp.MustCompile(`<a href="/g/(\d+?)/" class="cover".*?>`)
 	lastBookPageRegexp   = regexp.MustCompile(`<a href="/favorites/\?page=(\d+?)" class="last">`)
@@ -146,10 +144,11 @@ func (s *NhentaiSpider) ParseMangaIndexPage(resp *entity.Response) (interface{},
 func (s *NhentaiSpider) ErrBack(req *entity.Request, err error) {
 	req.IncReTries()
 	url := req.GetReqObj().URL
-	log.Printf("[ERROR] error back, url: %s\n", url)
+	retries := req.GetReTries()
+
+	log.Printf("[ERROR] error back, retries: %d , url: %s\n", retries, url)
 	log.Println("[ERROR] Trace: ->", errors.Trace(err))
 
-	retries := req.GetReTries()
 	if retries > 5 {
 		log.Printf("reTry too much: -> %s\n", url)
 		return

@@ -29,13 +29,13 @@ func NewResponse(
 	}
 }
 
-func FromRequest(request *Request) *Response {
-	r := &Response{}
-	r.Request = request
-	r.Callback = request.Callback
-	r.Errback = request.Errback
-	r.Meta = request.Meta
-	return r
+func FromRequest(req *Request) *Response {
+	resp := &Response{}
+	resp.Request = req
+	resp.Callback = req.Callback
+	resp.Errback = req.Errback
+	resp.Meta = req.Meta
+	return resp
 }
 
 func (r *Response) GetRespObj() *http.Response {
