@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -23,6 +24,8 @@ var (
 	mangaNameRegexp      = regexp.MustCompile(`<span class="before">(.*?)</span><span class="pretty">(.*?)</span><span class="after">(.*?)</span>`)
 	ValidNameRegexp      = regexp.MustCompile(`[\\/:*?"<>|\r\n]+`)
 )
+
+var ParseOnce sync.Once
 
 type Manga struct {
 	content  []byte
@@ -73,28 +76,31 @@ func (s *NhentaiSpider) Parse(resp *entity.Response) (interface{}, error) {
 		s.QueueRequest(mangaIndexPageReq)
 	}
 
-	favoritesPageMatch := lastBookPageRegexp.FindSubmatch(content)
-	if favoritesPageMatch == nil {
-		return nil, nil
-	}
-	lastPage := string(favoritesPageMatch[1])
-	if lastPage == "" {
-		log.Printf("[WARN] get last page error,url:[%s]", resp.Request.GetUrl())
-		return nil, nil
-	}
-	lp, err := strconv.Atoi(lastPage)
-	if err != nil {
-		log.Printf("[WARN] get last page error,url:[%s]", resp.Request.GetUrl())
-		return nil, nil
-	}
-	for i := 2; i <= lp; i++ {
-		url := fmt.Sprintf("https://nhentai.net/favorites/?page=%d", i)
-		favoritesPageReq, e := newSimpleRequest(url, s.Parse, s.ErrBack, nil)
-		if e != nil {
-			return nil, e
+	ParseOnce.Do(func() {
+		favoritesPageMatch := lastBookPageRegexp.FindSubmatch(content)
+		if favoritesPageMatch == nil {
+			return
 		}
-		s.QueueRequest(favoritesPageReq)
-	}
+		lastPage := string(favoritesPageMatch[1])
+		if lastPage == "" {
+			log.Printf("[WARN] get last page error,url:[%s]", resp.Request.GetUrl())
+			return
+		}
+		lp, err := strconv.Atoi(lastPage)
+		if err != nil {
+			log.Printf("[WARN] get last page error,url:[%s]", resp.Request.GetUrl())
+			return
+		}
+		for i := 2; i <= lp; i++ {
+			url := fmt.Sprintf("https://nhentai.net/favorites/?page=%d", i)
+			favoritesPageReq, e := newSimpleRequest(url, s.Parse, s.ErrBack, nil)
+			if e != nil {
+				return
+			}
+			s.QueueRequest(favoritesPageReq)
+		}
+	})
+
 	return nil, nil
 }
 
