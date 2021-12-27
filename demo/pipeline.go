@@ -7,15 +7,13 @@ import (
 	"path/filepath"
 )
 
-const (
-	BasePath = "d:\\tmp\\download"
-)
-
-type StoreMangaPipeline struct{}
+type StoreMangaPipeline struct {
+	storeBasePath string
+}
 
 func (p *StoreMangaPipeline) ProcessItem(item interface{}, sp spider.Spider) error {
 	manga := item.(*Manga)
-	dirPath := filepath.Join(BasePath, manga.dirName)
+	dirPath := filepath.Join(p.storeBasePath, manga.dirName)
 	MdirIfNotExist(dirPath)
 	filePath := filepath.Join(dirPath, manga.fileName)
 	err := ioutil.WriteFile(filePath, manga.content, 0666)
@@ -27,6 +25,6 @@ func (p *StoreMangaPipeline) ProcessItem(item interface{}, sp spider.Spider) err
 	return nil
 }
 
-func NewStoreMangaPipeline() *StoreMangaPipeline {
-	return &StoreMangaPipeline{}
+func NewStoreMangaPipeline(basePath string) *StoreMangaPipeline {
+	return &StoreMangaPipeline{basePath}
 }

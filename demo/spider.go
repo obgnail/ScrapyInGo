@@ -9,6 +9,7 @@ import (
 	"github.com/obgnail/ScrapyInGo/core/middleware"
 	"github.com/obgnail/ScrapyInGo/core/spider_imp"
 	"log"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"time"
@@ -31,13 +32,15 @@ type Manga struct {
 
 type NhentaiSpider struct {
 	*spider_imp.SimpleSpider
+	storeBasePath string
 }
 
-func New(name string, threadNum uint, headers map[string]string, proxy string) *NhentaiSpider {
+func New(name string, threadNum uint, headers map[string]string, proxy string, storeBasePath string) *NhentaiSpider {
 	sp := &NhentaiSpider{SimpleSpider: spider_imp.NewSimpleSpider(name, threadNum)}
 	sp.SetDownloader(downloader.NewProxyDownloader(proxy))
-	sp.SetPipeline(NewStoreMangaPipeline())
+	sp.SetPipeline(NewStoreMangaPipeline(storeBasePath))
 	sp.AppendMiddleware(middleware.NewSetHeaderMiddleware(headers))
+	sp.storeBasePath = storeBasePath
 	return sp
 }
 
@@ -101,6 +104,16 @@ func (s *NhentaiSpider) ParseMangaIndexPage(resp *entity.Response) (interface{},
 		return nil, errors.Trace(err)
 	}
 
+	mangaNameMatch := mangaNameRegexp.FindSubmatch(content)
+	name := bytes.Join(mangaNameMatch[1:], []byte(""))
+	mangeDirName := ValidName(name)
+
+	// 如果目标目录已经存在,则不下载此漫画
+	dirPath := filepath.Join(s.storeBasePath, string(mangeDirName))
+	if IsDirExist(dirPath) {
+		return nil, nil
+	}
+
 	pageNumMatch := mangaPageNumRegexp.FindSubmatch(content)
 	pageNum := string(pageNumMatch[1])
 	if pageNum == "" {
@@ -112,10 +125,6 @@ func (s *NhentaiSpider) ParseMangaIndexPage(resp *entity.Response) (interface{},
 		log.Printf("[WARN] get last page error,url:[%s]", resp.Request.GetUrl())
 		return nil, nil
 	}
-
-	mangaNameMatch := mangaNameRegexp.FindSubmatch(content)
-	name := bytes.Join(mangaNameMatch[1:], []byte(""))
-	mangeDirName := ValidName(name)
 
 	// 1t.jpg
 	mangaUrlSuffixMatch := mangaUrlSuffixRegexp.FindSubmatch(content)

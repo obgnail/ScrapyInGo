@@ -43,3 +43,11 @@ func MdirIfNotExist(dirPath string) {
 		}
 	}
 }
+
+func IsDirExist(dirPath string) bool {
+	_, err := os.Stat(dirPath)
+	if err != nil {
+		return !os.IsNotExist(err)
+	}
+	return true
+}
