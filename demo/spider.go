@@ -116,7 +116,6 @@ func (s *NhentaiSpider) ParseMangaIndexPage(resp *entity.Response) (interface{},
 	mangaNameMatch := mangaNameRegexp.FindSubmatch(content)
 	name := bytes.Join(mangaNameMatch[1:], []byte(""))
 	mangeDirName := ValidName(name)
-	meta := map[string]interface{}{"mangaDirName": string(mangeDirName), "mangaFileName": ""}
 
 	// 1t.jpg
 	mangaUrlSuffixMatch := mangaUrlSuffixRegexp.FindSubmatch(content)
@@ -129,7 +128,7 @@ func (s *NhentaiSpider) ParseMangaIndexPage(resp *entity.Response) (interface{},
 	for i := 1; i <= pages; i++ {
 		fileName := fmt.Sprintf("%d.%s", i, suffix)
 		url := fmt.Sprintf("https://i.nhentai.net/galleries/%s/%s", mangaID, fileName)
-		meta["mangaFileName"] = fileName
+		meta := map[string]interface{}{"mangaDirName": string(mangeDirName), "mangaFileName": fileName}
 		mangaReq, e := newSimpleRequest(url, s.ParseMangaContent, s.ErrBack, meta)
 		if e != nil {
 			return nil, errors.Trace(e)
